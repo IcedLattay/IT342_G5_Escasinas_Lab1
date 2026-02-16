@@ -1,4 +1,5 @@
 import "./AuthRegisterFormContainer.css";
+import { Link } from "react-router-dom";
 
 export default function AuthRegisterFormContainer({ 
     children,
@@ -16,12 +17,27 @@ export default function AuthRegisterFormContainer({
             <div className="form-footer">
 
                 {formPurpose=="register" && 
-                <p>Already have an account? <a href="/login">Sign in</a></p>
+                <p style={{
+                    display: "flex",
+                    gap: ".25rem"
+                }}>Already have an account? 
+                    <Link to={"/login"}>
+                        <span>Sign in</span>
+                    </Link>
+                </p>
                 }
 
                 {formPurpose=="login" && 
-                <p>Don't have an account? <a href="/register">Register</a></p>
+                <p style={{
+                    display: "flex",
+                    gap: ".25rem"
+                }}>Don't have an account?
+                    <Link to={"/register"}>
+                        <span>Sign up</span>
+                    </Link>
+                </p>
                 }
+                
             </div>
         </div>
     );
