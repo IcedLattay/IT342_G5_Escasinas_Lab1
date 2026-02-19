@@ -1,22 +1,20 @@
 import AuthRegisterFormContainer from "../../components/AuthRegisterFormContainer/AuthRegisterFormContainer";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 import "./LoginPage.css";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../AuthManagement/AuthContext";
 
 
 
 
 export default function LoginPage() {
 
-    // useStates
-    const [errorMsgs, setErrorMsgs] = useState({
-        username: "",
-        password: "",
-    });
+    // useNavigate and useContext
+    const navigate = useNavigate();
+    const { setUser, setUserIsAuthenticated, userIsAuthenticated } = useContext(AuthContext);
 
-    const [fieldTouchTracker, setFieldTouchTracker] = useState({
-        usernameIsTouched: false,
-        passwordIsTouched: false,
-    });
+    // useStates
+    const [errorMsg, setErrorMsg] = useState("");
 
     const [fieldValidationTracker, setFieldsValidationTracker] = useState({
         usernameIsValid: false,
@@ -33,59 +31,78 @@ export default function LoginPage() {
 
     // useEffects
     useEffect(() => {
-            
-        if (fieldTouchTracker.usernameIsTouched &&
-            usernameField.current.value==""
-        ) {
-            setErrorMsgs(prev => ({
-                ...prev,
-                username: "This input is required.",
-            }))
-            setFieldsValidationTracker(prev => ({
-                ...prev,
-                usernameIsValid: false,
-            }))
-        }
-    
-        if (fieldTouchTracker.passwordIsTouched &&
-            passwordField.current.value==""
-        ) {
-            setErrorMsgs(prev => ({
-                ...prev,
-                password: "This input is required.",
-            }))
-            setFieldsValidationTracker(prev => ({
-                ...prev,
-                passwordIsValid: false,
-            }))
-        }
-
-    }, [fieldTouchTracker])
+        console.log(userIsAuthenticated);
+    }, []);
 
 
 
     //helper functions
     function onUsernameInput() {
-        setErrorMsgs(prev => ({
-            ...prev,
-            username: "",
-        }))
-        setFieldsValidationTracker(prev => ({
-            ...prev,
-            usernameIsValid: true,
-        }))
+        if (usernameField.current.value != "") {
+            setFieldsValidationTracker(prev => ({ ...prev, usernameIsValid: true }));
+        }
     }
 
     function onPasswordInput() {
-        setErrorMsgs(prev => ({
-            ...prev,
-            password: "",
-        }))
-        setFieldsValidationTracker(prev => ({
-            ...prev,
-            passwordIsValid: true,
-        }))
+        if (passwordField.current.value != "") {
+            setFieldsValidationTracker(prev => ({ ...prev, passwordIsValid: true }));
+        }
     }
+
+    function clearForm() {
+        setErrorMsg({
+            username: "",
+            password: "",
+        })
+
+        usernameField.current.value = "";
+        passwordField.current.value = "";
+    }
+
+
+
+    // JSX/Api calls
+    async function handleOnSubmit(e) {
+        e.preventDefault();
+
+        const loginFormData = {
+            username: usernameField.current.value,
+            password: passwordField.current.value,
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/login', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(loginFormData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setErrorMsg(data.message);
+                return; 
+            }
+
+            localStorage.setItem("token", data.token);
+
+            const userRes = await fetch('http://localhost:8080/me', {
+                headers: { "Authorization": `Bearer ${data.token}` }
+            });
+            const userData = await userRes.json();
+            setUser(userData);
+            setUserIsAuthenticated(true);
+
+            navigate("/dashboard");
+
+        } catch (err) {
+            console.error("Login Error:", err);
+            setErrorMsg({ password: "Something went wrong. Try again." });
+        }
+    }
+
+
+
 
 
 
@@ -100,41 +117,37 @@ export default function LoginPage() {
                         marginBottom: ".5rem",
                     }}>Sign in</p>
 
-                    <div className="form">
+                    <form className="form" >
 
                         <div className="input-group">
                             <p>Username</p>
                             <input ref={usernameField} type="text" placeholder="Username"
                                 style={ 
-                                    errorMsgs.username!="" ? {boxShadow: "inset 0 0 0 1px #ff0000"} : {}
+                                    errorMsg!="" ? {boxShadow: "inset 0 0 0 1px #ff0000"} : {}
                                 }
                                 onChange={onUsernameInput}
-                                onBlur={() => {
-                                    setFieldTouchTracker(prev => ({...prev, usernameIsTouched: true}))
-                                }}
                             />
-                            <p className="error-message">{errorMsgs.username}</p>
                         </div> 
 
                         <div className="input-group">
                             <p>Password</p>
                             <input ref={passwordField} type="password" placeholder="Password"
                                 style={ 
-                                    errorMsgs.password!="" ? {boxShadow: "inset 0 0 0 1px #ff0000"} : {}
+                                    errorMsg!="" ? {boxShadow: "inset 0 0 0 1px #ff0000"} : {}
                                 }
                                 onChange={onPasswordInput}
-                                onBlur={() => {
-                                    setFieldTouchTracker(prev => ({...prev, passwordIsTouched: true}))
-                                }}
                             />
-                            <p className="error-message">{errorMsgs.password}</p>
+                            <p className="error-message">{errorMsg}</p>
                         </div> 
 
-                        <button type="button" disabled={!(fieldValidationTracker.usernameIsValid &&
-                                                        fieldValidationTracker.passwordIsValid
-                        )}>Sign in</button>
+                        <button type="submit" 
+                        disabled={!(
+                            fieldValidationTracker.usernameIsValid &&
+                            fieldValidationTracker.passwordIsValid
+                        )}
+                        onClick={handleOnSubmit}>Sign in</button>
 
-                    </div>
+                    </form>
                 </div>
                 
             </AuthRegisterFormContainer>
