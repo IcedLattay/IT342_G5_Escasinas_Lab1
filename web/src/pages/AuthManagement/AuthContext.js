@@ -5,11 +5,24 @@ export const AuthContext = createContext();
 export function AuthProvider({ children }) {
     
     // useStates
-    const [userIsAuthenticated, setIsAuthenticated] = useState(true);
-    
+    const [userIsAuthenticated, setUserIsAuthenticated] = useState(null);
+    const [user, setUser] = useState(null);
+
+
+
+    // useEffects
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        
+        if (token) {
+        setUserIsAuthenticated(true);
+        } else {
+        setUserIsAuthenticated(false);
+        }
+    }, []);
 
     return (
-        <AuthContext.Provider value={{ userIsAuthenticated, setIsAuthenticated }}>
+        <AuthContext.Provider value={{ userIsAuthenticated, setUserIsAuthenticated, user, setUser }}>
         {children}
         </AuthContext.Provider>
     );
