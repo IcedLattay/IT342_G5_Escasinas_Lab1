@@ -5,7 +5,7 @@ import { AuthContext } from "./AuthContext"
 export default function PublicRoute({ children }) {
   const { userIsAuthenticated } = useContext(AuthContext);
 
-  if (!userIsAuthenticated) return <Navigate to="/login" />;
+  if (userIsAuthenticated) return <Navigate to="/dashboard" />;
 
   return children;
 }
