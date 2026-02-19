@@ -1,9 +1,17 @@
 import "./RegisterPage.css";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 import AuthRegisterFormContainer from "../../components/AuthRegisterFormContainer/AuthRegisterFormContainer";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../AuthManagement/AuthContext";
 
 
 export default function RegisterPage() {
+    
+    // useNavigate and useContext
+    const navigate = useNavigate();
+    const { setUser, setUserIsAuthenticated, userIsAuthenticated } = useContext(AuthContext);
+
+
     
     // useStates
     const [errorMsgs, setErrorMsgs] = useState({
@@ -219,6 +227,56 @@ export default function RegisterPage() {
         }
     }
 
+
+
+    
+    // JSX/Api calls
+    async function handleOnSubmit(e) {
+        e.preventDefault();
+
+        const registerFormData = {
+            username: usernameField.current.value,
+            emailAddress: emailField.current.value,
+            password: passwordField.current.value,
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/register', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(registerFormData)
+            });
+
+            
+            const data = await response.json();
+            console.log("JWT received:", data.message);
+
+            const token = data.message;
+
+            if (!response.ok) {
+                setErrorMsgs(prev => ({
+                    ...prev,
+                    username: data.message
+                }));
+            }
+
+            
+            localStorage.setItem("token", token);
+
+            const userRes = await fetch('http://localhost:8080/me', {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const userData = await userRes.json();
+            setUser(userData);
+            setUserIsAuthenticated(true);
+
+            navigate("/dashboard");
+
+        } catch (err) {
+            console.error("Register Error:", err);
+        }
+    }
+
     
 
     return (
@@ -244,13 +302,6 @@ export default function RegisterPage() {
                             />
                             <p className="error-message">{errorMsgs.username}</p>
                             
-                            {/*
-                            Error messages include (the order of these messages indicate their precedence): 
-                                "This input is required."
-                                "Must be between 3 and 20 characters long.",
-                                "Must only contain letters, numbers, and '_'.", 
-                                "Username is already taken."
-                             */}
                         </div> 
                         <div className="input-group">
                             <p>Email Address</p>
@@ -265,11 +316,6 @@ export default function RegisterPage() {
                             />
                             <p className="error-message">{errorMsgs.email}</p>
 
-                            {/*
-                            Error messages include (the order of these messages indicate their precedence): 
-                                "This input is required."
-                                "Invalid email address."
-                             */}
                         </div>
                         <div className="input-group">
                             <p>Password</p>
@@ -285,12 +331,6 @@ export default function RegisterPage() {
                             />
                             <p className="error-message">{errorMsgs.password}</p>
 
-                            {/*
-                            Error messages include (the order of these messages indicate their precedence): 
-                                "This input is required."
-                                "Must be at least 8 characters long."
-                                "Must contain at least one uppercase letter, one lowercase letter, and one number."
-                             */}
                         </div>
                         <div className="input-group">
                             <p>Confirm Password</p>
@@ -305,18 +345,14 @@ export default function RegisterPage() {
                             />
                             <p className="error-message">{errorMsgs.confirmPassword}</p>
 
-                            {/*
-                            Error messages include (the order of these messages indicate their precedence): 
-                                "This input is required.",
-                                "Passwords do not match."
-                             */}
                         </div>
 
                         <button type="button" disabled={!(fieldValidationTracker.usernameIsValid &&
                                                         fieldValidationTracker.emailIsValid &&
                                                         fieldValidationTracker.passwordIsValid && 
                                                         fieldValidationTracker.confirmPasswordIsValid
-                        )}>Sign up</button>
+                        )}
+                        onClick={handleOnSubmit}>Sign up</button>
                     </div>
                 </div>
             </AuthRegisterFormContainer>
