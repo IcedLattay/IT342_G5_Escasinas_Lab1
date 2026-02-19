@@ -29,12 +29,14 @@ public class AuthService {
     }
 
     public User createUser(RegisterRequest request) {
+
         if (userRepository.existsByUsername(request.username)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is already taken.");
         }
 
         User newUser = new User();
 
+        System.out.println("Email from request: " + request.emailAddress);
         newUser.username = request.username;
         newUser.emailAddress = request.emailAddress;
         newUser.password = passwordEncoder.encode(request.password);

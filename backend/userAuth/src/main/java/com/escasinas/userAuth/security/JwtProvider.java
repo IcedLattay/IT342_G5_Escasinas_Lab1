@@ -22,14 +22,17 @@ public class JwtProvider {
     public String generateToken(User user) {
         Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
 
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .setSubject(String.valueOf(user.username))
                 .claim("userId", user.userId)
-                .claim("email", user.emailAddress)
+                .claim("emailAddress", user.emailAddress)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .signWith(key)
                 .compact();
+
+        System.out.println("Generated JWT: " + token);
+        return token;
     }
 
     public boolean isTokenValid(String token) {

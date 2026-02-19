@@ -5,39 +5,60 @@ import com.escasinas.userAuth.dto.LoginRequest;
 import com.escasinas.userAuth.dto.LoginResponse;
 import com.escasinas.userAuth.dto.RegisterRequest;
 import com.escasinas.userAuth.model.User;
+import com.escasinas.userAuth.security.JwtProvider;
 import com.escasinas.userAuth.service.AuthService;
 import com.escasinas.userAuth.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 public class AuthController {
     public AuthService authService;
     public UserService userService;
+    public JwtProvider tokenProvider;
 
     public AuthController(
             AuthService authService,
-            UserService userService
+            UserService userService,
+            JwtProvider tokenProvider
     ) {
         this.authService = authService;
         this.userService = userService;
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping("/register")
-    public ApiResponse register(@RequestBody RegisterRequest request) {
-        authService.createUser(request);
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        try {
+            User newUser = authService.createUser(request);
 
-        LoginRequest loginRequest = new LoginRequest(request.username, request.password);
+            String token = tokenProvider.generateToken(newUser);
 
-        String token = authService.authenticate(loginRequest).token;
-
-        return new ApiResponse(true, token);
+            ApiResponse success = new ApiResponse(true, token);
+            return ResponseEntity.ok(success);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Username is already taken.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        }
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
-        return authService.authenticate(request);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            LoginResponse response = authService.authenticate(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Incorrect username or password.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
     }
 
     @PostMapping("/logout")
