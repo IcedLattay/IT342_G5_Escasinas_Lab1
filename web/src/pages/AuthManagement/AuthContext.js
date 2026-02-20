@@ -19,7 +19,29 @@ export function AuthProvider({ children }) {
         } else {
         setUserIsAuthenticated(false);
         }
+
+        if (!user) fetchUserData();
     }, []);
+
+    
+
+    // JSX/Api calls
+    async function fetchUserData() {
+        console.log("fetching user data...");
+
+        const token = localStorage.getItem("token")
+
+        const res = await fetch("http://localhost:8080/me", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            setUser(data);
+        }
+    }
+
+
 
     return (
         <AuthContext.Provider value={{ userIsAuthenticated, setUserIsAuthenticated, user, setUser }}>
